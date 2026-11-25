@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blackjack</title>
+<style>
+:root{--felt:#0f5132;--felt2:#0a3d26;--ink:#f4f1e8;--muted:#b9d3c4;--card:#fffdf7;--cardink:#1b1b1b;--red:#c0392b;--gold:#e6b84a;--btn:#e6b84a;--btnink:#2a1f00;--panel:rgba(0,0,0,.26);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--felt:#0b3a25;--felt2:#072a1b}}
+:root[data-theme="dark"]{--felt:#0b3a25;--felt2:#072a1b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 25%,var(--felt),var(--felt2));color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+main{max-width:560px;margin:0 auto;padding:12px 14px 30px}
+h1{font-size:20px;margin:4px 0 2px}
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.sub{color:var(--muted);font-size:13px;margin-bottom:6px}
+.panel{background:var(--panel);border:1px solid rgba(230,184,74,.18);border-radius:16px;padding:12px;margin:10px 0;transition:box-shadow .3s,border-color .3s}
+.panel.turn{border-color:var(--gold);box-shadow:0 0 18px rgba(230,184,74,.35)}
+.label{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:8px;gap:8px}
+.label b{font-size:15px}
+.badge{background:rgba(0,0,0,.35);border-radius:999px;padding:3px 11px;font-size:13px;white-space:nowrap}
+.gold{color:var(--gold);font-weight:700}
+.hb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px;border-radius:12px;margin-bottom:4px}
+.hb.act{background:rgba(230,184,74,.12)}
+.hand{display:flex;min-height:78px}
+.hand .card+.card{margin-left:-20px}
+.card{width:52px;height:76px;background:var(--card);color:var(--cardink);border-radius:7px;display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-weight:700;font-size:17px;box-shadow:0 2px 6px rgba(0,0,0,.45);animation-fill-mode:backwards}
+.card.red{color:var(--red)}
+.card .s{align-self:flex-end;font-size:20px}
+.card.back{background:repeating-linear-gradient(45deg,#7b1e2b,#7b1e2b 5px,#5e1520 5px,#5e1520 10px);border:2px solid var(--card)}
+.card.deal{animation:deal .45s cubic-bezier(.2,.8,.3,1)}
+.card.flip{animation:flip .5s ease-out}
+@keyframes deal{from{transform:translate(140px,-160px) rotate(28deg) scale(.7);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
+@keyframes flip{from{transform:rotateY(90deg) scale(1.1)}to{transform:none}}
+.meta{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:13px}
+.score{background:rgba(0,0,0,.4);border-radius:999px;padding:2px 10px;font-size:13px}
+.tag{font-weight:800;font-size:13px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.14)}
+.tag.win,.tag.bj{background:var(--gold);color:var(--btnink);animation:pop .5s}
+.tag.lose,.tag.bust{background:rgba(192,57,43,.55)}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.chip{--cc:#4c8bd6;--sz:46px;width:var(--sz);height:var(--sz);border-radius:50%;background:radial-gradient(circle,var(--cc) 0 56%,#fff 57% 62%,var(--cc) 63%);border:3px dashed rgba(255,255,255,.9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(var(--sz)*.28);text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 3px 0 rgba(0,0,0,.4),0 5px 9px rgba(0,0,0,.35);flex:none}
+.c10{--cc:#4c8bd6}.c25{--cc:#3aa66a}.c50{--cc:#d6574c}.c100{--cc:#2c2c34}.c500{--cc:#8e5bd0}
+.pile{position:relative;width:40px;flex:none}
+.pile .chip{--sz:38px;position:absolute;left:1px}
+.pile .chip.drop{animation:drop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes drop{from{transform:translateY(-46px) scale(1.4);opacity:.2}to{transform:none;opacity:1}}
+.betrow{display:flex;align-items:flex-end;gap:10px;min-height:56px}
+.tray{display:flex;justify-content:center;gap:9px;margin:10px 0 4px;flex-wrap:wrap}
+.tray .chip{cursor:pointer;transition:transform .12s;user-select:none}
+.tray .chip:active{transform:scale(.86) translateY(3px)}
+.tray .chip.off{opacity:.3;pointer-events:none}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:13px 16px;background:var(--btn);color:var(--btnink);cursor:pointer;transition:transform .1s}
+button:active{transform:scale(.95)}
+button.alt{background:rgba(255,255,255,.15);color:var(--ink)}
+button:disabled{opacity:.35;pointer-events:none}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.row button{flex:1;min-width:90px}
+input{font:inherit;padding:11px;border-radius:10px;border:0;width:100%;margin:6px 0}
+.msg{text-align:center;font-size:15px;margin:8px 0;min-height:22px}
+.small{font-size:12px;color:var(--muted)}
+.code{font-size:26px;letter-spacing:4px;font-weight:800;color:var(--gold);text-align:center;margin:6px 0}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+.toast{position:absolute;left:50%;top:42%;transform:translateX(-50%);font-size:44px;font-weight:900;color:var(--gold);text-shadow:0 3px 14px rgba(0,0,0,.6);animation:fl 1.8s ease-out forwards}
+.toast.neg{color:#ff8a7a}
+@keyframes fl{0%{transform:translate(-50%,30px) scale(.4);opacity:0}20%{transform:translate(-50%,0) scale(1.2);opacity:1}100%{transform:translate(-50%,-110px) scale(1);opacity:0}}
+.cf{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:cf linear forwards}
+@keyframes cf{to{transform:translate(var(--dx),105vh) rotate(var(--r));opacity:.9}}
+</style>
+</head>
+<body>
+<main id="app"><h1>♠ Blackjack</h1><div class="sub">Yükleniyor…</div></main>
+<div id="fx"></div>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+var app=document.getElementById('app'),fx=document.getElementById('fx');
+var role=null,peer=null,conn=null,uid=null,code='',S=null,myName='',myBet=0,seen={},quiet=true,dealIdx=0,justAdded=false,muted=false;
+try{myName=localStorage.getItem('bj-name')||'';muted=localStorage.getItem('bj-mute')==='1'}catch(e){}
+var DEN=[500,100,50,25,10];
+var esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+var clone=o=>JSON.parse(JSON.stringify(o));
+var rnd=n=>{var a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n};
+var blank=()=>({phase:'wait',seats:[null,null],dealer:[],deck:[],turn:null,bank:{},round:0});
+var mkSeat=(id,name)=>({id:id,name:name,chips:1000,bet:0,ready:false,hands:[],net:0});
+
+/* ---------- sound ---------- */
+var ac=null,nb=null;
+function AU(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)();var l=ac.sampleRate;nb=ac.createBuffer(1,l,l);var d=nb.getChannelData(0);for(var i=0;i<l;i++)d[i]=Math.random()*2-1}catch(e){}}
+ if(ac&&ac.state==='suspended')ac.resume();return ac}
+document.addEventListener('pointerdown',AU);
+function tone(f,t,d,type,v,f2){var o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.03)}
+function nz(t,d,f1,f2,v){var s=ac.createBufferSource(),b=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nb;b.type='bandpass';b.Q.value=1.2;b.frequency.setValueAtTime(f1,t);b.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(b);b.connect(g);g.connect(ac.destination);s.start(t);s.stop(t+d+.03)}
+function coins(n,t){for(var k=0;k<n;k++)tone(2300+Math.random()*1200,t+k*.055,.16,'sine',.07)}
+var sfx={
+ chip(){var t=ac.currentTime;nz(t,.05,3800,2600,.55);tone(2300,t,.05,'square',.04,1600);nz(t+.045,.05,3200,2200,.4)},
+ deal(){var t=ac.currentTime;nz(t,.13,900,4200,.6)},
+ ping(){var t=ac.currentTime;tone(880,t,.25,'sine',.14);tone(1320,t+.09,.3,'sine',.11)},
+ win(){var t=ac.currentTime;[523,659,784,1047].forEach((f,k)=>tone(f,t+k*.09,.5,'triangle',.16));coins(7,t+.35)},
+ bj(){var t=ac.currentTime;[523,659,784,1047,1319,1568].forEach((f,k)=>{tone(f,t+k*.08,.6,'triangle',.16);tone(f*2,t+k*.08,.3,'sine',.04)});coins(16,t+.5)},
+ lose(){var t=ac.currentTime;tone(260,t,.6,'sine',.2,110)},
+ push(){var t=ac.currentTime;tone(660,t,.25,'sine',.12);tone(660,t+.15,.3,'sine',.1)}
+};
+function play(n,delay){if(muted||!AU())return;if(delay)setTimeout(()=>{try{sfx[n]()}catch(e){}},delay);else try{sfx[n]()}catch(e){}}
+function buzz(n){try{navigator.vibrate&&navigator.vibrate(n)}catch(e){}}
+
+/* ---------- fx ---------- */
+function confetti(n){var C=['#e6b84a','#d6574c','#4c8bd6','#3aa66a','#f4f1e8','#8e5bd0'];
+ for(var i=0;i<n;i++){var e=document.createElement('div');e.className='cf';e.style.left=Math.random()*100+'%';e.style.background=C[i%C.length];
+  e.style.setProperty('--dx',(Math.random()*160-80)+'px');e.style.setProperty('--r',(Math.random()*900-450)+'deg');
+  e.style.animationDuration=(1.8+Math.random()*1.6)+'s';e.style.animationDelay=Math.random()*.5+'s';fx.appendChild(e);setTimeout(()=>e.remove(),4200)}}
+function toast(txt,neg){var e=document.createElement('div');e.className='toast'+(neg?' neg':'');e.textContent=txt;fx.appendChild(e);setTimeout(()=>e.remove(),1900)}
+
+/* ---------- rules (only the host runs these) ---------- */
+function newDeck(){var R=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],d=[];
+ ['♠','♥','♦','♣'].forEach(s=>R.forEach(r=>d.push({r:r,s:s})));
+ for(var i=d.length-1;i>0;i--){var j=rnd(i+1),t=d[i];d[i]=d[j];d[j]=t}return d}
+var cv=c=>c.r==='A'?11:('JQK'.indexOf(c.r)>=0||c.r==='10')?10:+c.r;
+function val(h){var t=0,a=0;h.forEach(c=>{t+=cv(c);if(c.r==='A')a++});while(t>21&&a>0){t-=10;a--}return t}
+var seatOf=(s,id)=>s.seats.findIndex(p=>p&&p.id===id);
+var mySeat=()=>S?seatOf(S,uid):-1;
+function refundAll(s){s.seats.forEach(p=>{if(!p)return;if(s.phase==='play')p.hands.forEach(h=>p.chips+=h.bet);else if(s.phase==='bet'&&p.ready)p.chips+=p.bet;p.hands=[];p.ready=false;p.bet=0;p.net=0})}
+function newRound(s){s.seats.forEach(p=>{if(!p)return;if(p.chips<10)p.chips=1000;p.hands=[];p.bet=0;p.ready=false;p.net=0});s.dealer=[];s.turn=null;s.phase='bet';s.round++}
+function deal(s){s.deck=newDeck();s.dealer=[s.deck.pop(),s.deck.pop()];
+ s.seats.forEach(p=>{if(!p)return;var c=[s.deck.pop(),s.deck.pop()];p.hands=[{c:c,bet:p.bet,st:val(c)===21?'bj':'play'}]});
+ s.phase='play';if(val(s.dealer)===21){finish(s)}else{s.turn={s:0,h:-1};advance(s)}}
+function advance(s){var t=s.turn,si=t.s,hi=t.h+1;
+ for(;si<2;si++,hi=0){var p=s.seats[si];if(!p)continue;for(;hi<p.hands.length;hi++){if(p.hands[hi].st==='play'){s.turn={s:si,h:hi};return}}}
+ finish(s)}
+function finish(s){s.turn=null;
+ if(s.seats.some(p=>p&&p.hands.some(h=>h.st==='stand')))while(val(s.dealer)<17)s.dealer.push(s.deck.pop());
+ var d=val(s.dealer),dbj=s.dealer.length===2&&d===21;
+ s.seats.forEach(p=>{if(!p)return;var tot=0,bets=0;p.hands.forEach(h=>{var v=val(h.c),r,ret=0;bets+=h.bet;
+  if(v>21){r='bust'}else if(h.st==='bj'){if(dbj){r='push';ret=h.bet}else{r='bj';ret=Math.round(h.bet*2.5)}}
+  else if(dbj){r='lose'}else if(d>21||v>d){r='win';ret=h.bet*2}else if(v===d){r='push';ret=h.bet}else r='lose';
+  h.res=r;h.ret=ret;tot+=ret});p.chips+=tot;p.net=tot-bets});s.phase='done'}
+function cur(s,id){var i=seatOf(s,id);if(i<0||s.phase!=='play'||!s.turn||s.turn.s!==i)return null;var p=s.seats[i];return{p:p,h:p.hands[s.turn.h]}}
+var canSplit=(p,h)=>p.hands.length===1&&h.c.length===2&&cv(h.c[0])===cv(h.c[1])&&p.chips>=h.bet;
+var ACT={
+ startBet(s){if(!s.seats[0]||!s.seats[1]||s.phase==='bet'||s.phase==='play')return false;newRound(s)},
+ ready(s,id,b){var i=seatOf(s,id);if(i<0||s.phase!=='bet')return false;var p=s.seats[i];b=Math.floor(+b);
+  if(p.ready||!(b>=10)||b>p.chips)return false;p.chips-=b;p.bet=b;p.ready=true;if(s.seats.every(q=>!q||q.ready))deal(s)},
+ hit(s,id){var x=cur(s,id);if(!x)return false;x.h.c.push(s.deck.pop());var v=val(x.h.c);x.h.st=v>21?'bust':v===21?'stand':'play';if(x.h.st!=='play')advance(s)},
+ stand(s,id){var x=cur(s,id);if(!x)return false;x.h.st='stand';advance(s)},
+ dbl(s,id){var x=cur(s,id);if(!x||x.h.c.length!==2||x.p.chips<x.h.bet)return false;x.p.chips-=x.h.bet;x.h.bet*=2;x.h.c.push(s.deck.pop());x.h.st=val(x.h.c)>21?'bust':'stand';advance(s)},
+ split(s,id){var x=cur(s,id);if(!x||!canSplit(x.p,x.h))return false;x.p.chips-=x.h.bet;var a=x.h.c[0],b=x.h.c[1],bet=x.h.bet;
+  x.p.hands=[a,b].map(c=>{var cc=[c,s.deck.pop()];return{c:cc,bet:bet,sp:1,st:val(cc)===21?'stand':'play'}});s.turn={s:s.turn.s,h:-1};advance(s)}
+};
+function commit(s){react(S,s);S=s;render();if(conn&&conn.open){try{conn.send({t:'s',s:S})}catch(e){}}}
+function mutate(fn){var s=clone(S);if(fn(s)===false)return;commit(s)}
+function run(a,id,arg){if(Object.prototype.hasOwnProperty.call(ACT,a))mutate(s=>ACT[a](s,id,arg))}
+function act(a,arg){if(role==='host')run(a,'H',arg);else if(conn&&conn.open)conn.send({a:a,arg:arg})}
+
+/* ---------- network ---------- */
+var CH='abcdefghjkmnpqrstuvwxyz23456789';
+var genCode=()=>{var c='';for(var i=0;i<5;i++)c+=CH[rnd(CH.length)];return c};
+function showMsg(t){app.innerHTML='<h1>♠ Blackjack</h1><div class="panel"><div class="msg">'+esc(t)+'</div><div class="row"><button onclick="location.href=location.href.split(\'#\')[0]">Başa dön</button></div></div>'}
+function hostStart(){code=genCode();role='host';uid='H';
+ peer=new Peer('bjtable-'+code);
+ peer.on('open',()=>{S=blank();S.seats[0]=mkSeat('H',myName||'Oyuncu 1');try{history.replaceState(null,'','#'+code)}catch(e){}render()});
+ peer.on('error',e=>{if(e.type==='unavailable-id'){try{peer.destroy()}catch(x){}hostStart()}else if(!S)showMsg('Sunucuya bağlanılamadı. İnternetini kontrol edip tekrar dene.')});
+ peer.on('connection',c=>{
+  if(conn&&conn.open){c.on('open',()=>{try{c.send({t:'full'})}catch(e){}setTimeout(()=>c.close(),400)});return}
+  conn=c;
+  c.on('data',m=>{if(!m||conn!==c)return;
+   if(m.a==='hello'){var nm=String(m.name||'Oyuncu 2').slice(0,14);
+    mutate(s=>{refundAll(s);s.seats[1]=mkSeat('G',nm);s.seats[1].chips=s.bank.G||1000;newRound(s)})}
+   else if(typeof m.a==='string')run(m.a,'G',m.arg)});
+  var gone=()=>{if(conn===c){conn=null;mutate(s=>{refundAll(s);if(s.seats[1]){s.bank.G=s.seats[1].chips;s.seats[1]=null}s.phase='wait';s.dealer=[];s.turn=null})}};
+  c.on('close',gone);c.on('error',gone)})}
+function guestStart(c){code=c;role='guest';uid='G';
+ peer=new Peer();
+ var to=setTimeout(()=>{if(!S)showMsg('Bağlanılamadı. Kod doğru mu? Arkadaşın masayı açık tutuyor mu?')},15000);
+ peer.on('open',()=>{conn=peer.connect('bjtable-'+code,{reliable:true});
+  conn.on('open',()=>conn.send({a:'hello',name:myName||'Oyuncu 2'}));
+  conn.on('data',m=>{if(!m)return;if(m.t==='s'){clearTimeout(to);var nx=m.s;react(S,nx);S=nx;render()}else if(m.t==='full')showMsg('Masa dolu.')});
+  conn.on('close',()=>showMsg('Bağlantı koptu. Yeniden bağlanmak için başa dön.'));
+  conn.on('error',()=>{})});
+ peer.on('error',e=>{clearTimeout(to);showMsg(e.type==='peer-unavailable'?'Masa bulunamadı. Kodu kontrol et, arkadaşın masayı açık tutmalı.':'Bağlantı hatası. Tekrar dene.')})}
+
+/* ---------- render ---------- */
+function cardEl(c,key,mode,hidden){var isNew=!seen[key];seen[key]=1;var cl='card'+((c&&(c.s==='♥'||c.s==='♦'))?' red':'')+(hidden?' back':'');var st='';
+ if(isNew&&!quiet){cl+=mode==='flip'?' flip':' deal';st=' style="animation-delay:'+(dealIdx++*120)+'ms"'}
+ return hidden?'<div class="'+cl+'"'+st+'></div>':'<div class="'+cl+'"'+st+'><span>'+c.r+'</span><span class="s">'+c.s+'</span></div>'}
+function pile(amt,drop){if(amt<=0)return '';var l=[],a=amt;DEN.forEach(d=>{while(a>=d&&l.length<9){l.push(d);a-=d}});
+ var h='<div class="betrow"><div class="pile" style="height:'+(38+(l.length-1)*7)+'px">';
+ l.forEach((d,k)=>{h+='<div class="chip c'+d+(drop&&k===l.length-1?' drop':'')+'" style="bottom:'+k*7+'px">'+d+'</div>'});
+ return h+'</div><span class="gold">'+amt+'</span></div>'}
+var LBL={win:'Kazandı',lose:'Kaybetti',push:'Berabere',bj:'Blackjack!',bust:'Battı'};
+
+function render(){
+ if(!S)return;dealIdx=0;var me=mySeat(),h='';
+ h+='<div class="top"><div><h1>♠ Blackjack</h1><div class="sub">Masa kodu: <b>'+esc(code)+'</b></div></div><button id="mute" class="alt" style="padding:8px 12px">'+(muted?'🔇':'🔊')+'</button></div>';
+ var hide=S.phase==='play',dv=S.dealer.length?(hide?(cv(S.dealer[0])===11?'A':cv(S.dealer[0])+'+?'):val(S.dealer)):'';
+ h+='<div class="panel"><div class="label"><b>Kasa</b><span class="badge">'+dv+'</span></div><div class="hand">';
+ S.dealer.forEach((c,i)=>{h+=(i===1&&hide)?cardEl(null,'d1b','',true):cardEl(c,'d'+i,i===1?'flip':'')});h+='</div></div>';
+ for(var i=0;i<2;i++){var p=S.seats[i],act=S.phase==='play'&&S.turn&&S.turn.s===i;
+  h+='<div class="panel'+(act?' turn':'')+'"><div class="label"><b>'+(p?esc(p.name)+(i===me?' (sen)':''):'Arkadaş bekleniyor…')+'</b>'+(p?'<span class="badge">🪙 '+p.chips+'</span>':'')+'</div>';
+  if(!p){}
+  else if(S.phase==='bet'){if(p.ready)h+=pile(p.bet)+'<div class="small">Bahis hazır ✓</div>';else if(i===me)h+=(myBet?pile(myBet,justAdded):'<div class="small">Aşağıdan jeton seç</div>');else h+='<div class="small">Bahis yapıyor…</div>'}
+  else if(S.phase==='play'||S.phase==='done'){p.hands.forEach((hd,j)=>{var on=act&&S.turn.h===j,v=val(hd.c);
+   h+='<div class="hb'+(on?' act':'')+'"><div class="hand">';hd.c.forEach((c,k)=>{h+=cardEl(c,i+'-'+j+'-'+k+c.r+c.s)});
+   h+='</div><div class="meta"><span class="score">'+v+'</span>'+pile(hd.bet);
+   if(hd.res)h+='<span class="tag '+hd.res+'">'+LBL[hd.res]+(hd.ret>hd.bet?' +'+(hd.ret-hd.bet):'')+'</span>';else if(hd.st==='bj')h+='<span class="tag bj">Blackjack!</span>';else if(hd.st==='stand')h+='<span class="small">Durdu</span>';
+   h+='</div></div>'})}
+  h+='</div>'}
+ var m='',ctl='';
+ if(S.phase==='wait'){m='Arkadaşını bekle. Kod: '+esc(code)}
+ else if(S.phase==='bet'){var mp=S.seats[me];
+  if(mp.ready)m='Diğer oyuncu bekleniyor…';
+  else{m='Bahsini yatır (en az 10)';var av=mp.chips-myBet;
+   ctl='<div class="tray">'+[10,25,50,100,500].map(d=>'<div class="chip c'+d+(av<d?' off':'')+'" data-chip="'+d+'">'+d+'</div>').join('')+'</div><div class="row"><button class="alt" id="clr"'+(myBet?'':' disabled')+'>Temizle</button><button class="alt" id="allin"'+(av>0?'':' disabled')+'>Hepsi</button><button id="ready"'+(myBet>=10?'':' disabled')+'>Bahsi onayla ('+myBet+')</button></div>'}}
+ else if(S.phase==='play'){var x=cur(S,uid);
+  if(x){m='Sıra sende!';ctl='<div class="row"><button id="hit">Kart çek</button><button class="alt" id="stand">Dur</button></div><div class="row"><button class="alt" id="dbl"'+(x.h.c.length===2&&x.p.chips>=x.h.bet?'':' disabled')+'>İkiye katla</button><button class="alt" id="spl"'+(canSplit(x.p,x.h)?'':' disabled')+'>Böl (split)</button></div>'}
+  else m=S.turn&&S.seats[S.turn.s]?'Sıra: '+esc(S.seats[S.turn.s].name):''}
+ else{m='El bitti.';ctl='<div class="row"><button id="startbet">Yeni el</button></div>'}
+ h+='<div class="msg">'+m+'</div>'+ctl;
+ if(role==='host')h+='<div class="row"><button id="copy" class="alt">Davet linkini kopyala</button></div>';
+ app.innerHTML=h;justAdded=false;quiet=false;wire()}
+
+function wire(){var g=id=>document.getElementById(id);
+ app.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{var d=+b.getAttribute('data-chip'),p=S.seats[mySeat()];if(!p||p.chips-myBet<d)return;myBet+=d;justAdded=true;play('chip');buzz(12);render()});
+ var on=(id,f)=>{if(g(id))g(id).onclick=f};
+ on('clr',()=>{myBet=0;render()});
+ on('allin',()=>{var p=S.seats[mySeat()];myBet=p.chips;justAdded=true;play('chip');play('chip',90);play('chip',180);buzz([15,40,15]);render()});
+ on('ready',()=>{play('chip');act('ready',myBet)});on('startbet',()=>act('startBet'));
+ on('hit',()=>act('hit'));on('stand',()=>act('stand'));on('dbl',()=>{play('chip');act('dbl')});on('spl',()=>act('split'));
+ on('mute',()=>{muted=!muted;try{localStorage.setItem('bj-mute',muted?'1':'0')}catch(e){}AU();render()});
+ on('copy',()=>{var b=g('copy'),url=location.href.split('#')[0]+'#'+code;try{navigator.clipboard.writeText(url).then(()=>b.textContent='Kopyalandı ✓',()=>b.textContent=url)}catch(e){b.textContent=url}})}
+
+/* ---------- reactions ---------- */
+var cc=s=>s.dealer.length+s.seats.reduce((n,p)=>n+(p?p.hands.reduce((m,h)=>m+h.c.length,0):0),0);
+function react(a,b){if(!a)return;
+ if((b.phase==='bet'||b.phase==='wait')&&a.phase!==b.phase){seen={};if(b.phase==='bet')myBet=0}
+ var d=cc(b)-cc(a);if(d>0)for(var k=0;k<Math.min(d,6);k++)play('deal',k*120);
+ var me=seatOf(b,uid);
+ for(var i=0;i<2;i++)if(b.seats[i]&&b.seats[i].ready&&!(a.seats[i]&&a.seats[i].ready)&&me!==i){play('chip');play('chip',110)}
+ if(b.phase==='play'&&me>=0&&b.turn&&b.turn.s===me&&!(a.turn&&a.turn.s===b.turn.s&&a.turn.h===b.turn.h))play('ping',250);
+ if(b.phase==='done'&&a.phase!=='done'){if(me>=0)setTimeout(()=>outcome(b.seats[me]),800)}}
+function outcome(p){if(!p)return;var n=p.net;
+ if(n>0){var bj=p.hands.some(h=>h.res==='bj');play(bj?'bj':'win');buzz([30,50,30,50,60]);toast('+'+n,false);confetti(bj?70:34)}
+ else if(n<0){play('lose');buzz(60);toast(String(n),true)}else{play('push');toast('Berabere')}}
+
+/* ---------- lobby ---------- */
+function lobby(){
+ var hc=(location.hash||'').slice(1).replace(/[^a-zA-Z0-9-]/g,'').toLowerCase();
+ var h='<h1>♠ Blackjack</h1><div class="sub">İki kişilik online masa</div><div class="panel"><div>Adın</div><input id="nm" maxlength="14" placeholder="Adın" value="'+esc(myName)+'">';
+ if(hc)h+='<div class="row"><button id="join">Masaya katıl ('+esc(hc)+')</button></div></div>';
+ else h+='<div class="row"><button id="host">Yeni masa kur</button></div></div><div class="panel"><div>Arkadaşın masa kurduysa kodu yaz</div><input id="cd" maxlength="8" placeholder="Masa kodu" autocapitalize="none"><div class="row"><button class="alt" id="join">Katıl</button></div></div>';
+ app.innerHTML=h;
+ var nm=()=>{myName=document.getElementById('nm').value.trim()||'Oyuncu';try{localStorage.setItem('bj-name',myName)}catch(e){}AU()};
+ var j=document.getElementById('join'),hb=document.getElementById('host');
+ if(hb)hb.onclick=()=>{nm();app.innerHTML='<h1>♠ Blackjack</h1><div class="sub">Masa kuruluyor…</div>';hostStart()};
+ j.onclick=()=>{nm();var c=hc||document.getElementById('cd').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');if(!c)return;app.innerHTML='<h1>♠ Blackjack</h1><div class="sub">Bağlanılıyor…</div>';guestStart(c)}}
+function boot(){
+ if(typeof Peer!=='undefined'){lobby();return}
+ var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
+ s.onload=lobby;s.onerror=()=>showMsg('Bağlantı kütüphanesi yüklenemedi. İnternetini kontrol et.');document.head.appendChild(s)}
+boot();
+})();
+</script>
+</body>
+</html>
